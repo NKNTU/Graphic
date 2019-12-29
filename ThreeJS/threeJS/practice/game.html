@@ -72,7 +72,7 @@
         //  Cube mapping second method
         var reflectionCube = new THREE.CubeTextureLoader()
             .setPath('texture/cube/skybox/')
-            .load(['px.jpg', 'nx.jpg', 'py.jpg', 'ny.jpg', 'pz.jpg', 'nz.jpg']);
+            .load(['d.jpg', 'd.jpg', 'd.jpg', 'd.jpg', 'd.jpg', 'd.jpg']);
         reflectionCube.format = THREE.RGBFormat;
         scene.background = reflectionCube;
 
@@ -409,6 +409,9 @@
         tween.easing(TWEEN.Easing.Back.Out);
         tween.start();
 
+        var repeat = tween.repeat();
+        tween.repeat(25);
+
 
         //Enemy _ Two ==>
         var textureSphere = new THREE.TextureLoader().load('texture/E2.jpg');
@@ -430,6 +433,9 @@
         tween.easing(TWEEN.Easing.Back.Out);
         tween.start();
 
+        var repeat = tween.repeat();
+        tween.repeat(25);
+
         //Enemy _ Three ==>
         var textureSphere = new THREE.TextureLoader().load('texture/E3.png');
         var sphereGeometry3 = new THREE.SphereGeometry(12, 8, 14);
@@ -449,6 +455,9 @@
         tween.delay(500);
         tween.easing(TWEEN.Easing.Back.Out);
         tween.start();
+
+        var repeat = tween.repeat();
+        tween.repeat(25);
 
         //Enemy _ Four ==>
         var textureSphere = new THREE.TextureLoader().load('texture/E1.jpg');
@@ -470,6 +479,9 @@
         tween.easing(TWEEN.Easing.Back.Out);
         tween.start();
 
+        var repeat = tween.repeat();
+        tween.repeat(25);
+
 
         //Enemy _ Five ==>
         var textureSphere = new THREE.TextureLoader().load('texture/E2.jpg');
@@ -490,6 +502,9 @@
         tween.delay(500);
         tween.easing(TWEEN.Easing.Back.Out);
         tween.start();
+
+        var repeat = tween.repeat();
+        tween.repeat(25);
 
     }
 
@@ -521,17 +536,17 @@
         function update() {
 
             var delta = clock.getDelta(); // seconds.
-            var moveDistance = 200 * delta; // 200 pixels per second
+            var moveDistance = 2000 * delta; // 200 pixels per second
             var rotateAngle = Math.PI / 2 * delta;   // pi/2 radians (90 degrees) per second
 
             if (keyboardControler.pressed("a"))
-                Sphere.position.x -= 0.3;
+                Sphere.position.x -= 0.5;
             if (keyboardControler.pressed("d"))
-                Sphere.position.x += 0.3;
+                Sphere.position.x += 0.5;
             if (keyboardControler.pressed("w"))
-                Sphere.position.z -= 0.3;
+                Sphere.position.z -= 0.5;
             if (keyboardControler.pressed("s"))
-                Sphere.position.z += 0.3;
+                Sphere.position.z += 0.5;
 
 
             // collision detection:
