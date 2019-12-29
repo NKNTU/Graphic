@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Skeleton</title>
+  <script type="text/javascript" src="lib/three.js"></script>
+  <script type="text/javascript" src="lib/Tween.js"></script>
+  <script type="text/javascript" src="lib/jquery.min.js"></script>
+  <style>
+    body {
+      /* set margin to 0 and overflow to hidden, to go fullScreen */
+      margin: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Div which will hold the Output -->
+<div id="web-gl">
+</div>
+
+<script type="text/javascript">
+
+    var scene, camera, renderer;
+
+    var group;
+
+
+    init();
+    animate();
+
+
+    function init() {
+
+        // create a scene, that will hold all our elements such as objects, cameras and lights.
+        scene = new THREE.Scene();
+
+        //  Create a camera, which defines where we're looking at.
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        //  Create a render and set the size
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setClearColor(new THREE.Color(0x5079ff));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // position and point the camera to the center of the scene
+        camera.position.set(10, 80, 150);
+        camera.lookAt(scene.position);
+
+        //  Add the output of the renderer to the html element
+        document.getElementById("web-gl").appendChild(renderer.domElement);
+
+        // add subtle ambient lighting
+        var ambiColor = "#ffffff";
+        var ambientLight = new THREE.AmbientLight(ambiColor);
+        scene.add(ambientLight);
+
+        // add spotlight for the shadows
+        var spotLight = new THREE.SpotLight(0xffffff);
+        spotLight.angle = 0.8;
+        spotLight.penumbra = 0.05;
+        spotLight.position.set(0, 60, 20);
+        scene.add(spotLight.clone());
+
+        //Surface
+        var surface = new THREE.PlaneGeometry(300, 350);
+        var surfacematerial = new THREE.MeshPhongMaterial({color: 0x202120, side: THREE.DoubleSide});
+        var surfacemesh = new THREE.Mesh(surface, surfacematerial);
+        surface.rotateX(Math.PI / 2);
+        surfacemesh.position.y = -30;
+        scene.add(surfacemesh);
+
+        var surface1 = new THREE.PlaneGeometry(250, 30);
+        var surfacematerial1 = new THREE.MeshPhongMaterial({color: 0xfefffc, side: THREE.DoubleSide});
+        var surfacemesh1 = new THREE.Mesh(surface1, surfacematerial1);
+        surfacemesh1.rotateX(Math.PI / 2);
+        surfacemesh1.position.y = -18;
+        scene.add(surfacemesh1);
+
+        //create group of object
+        var group = new THREE.Group();
+        scene.add(group);
+
+        //charkh1
+        var geometry = new THREE.TorusGeometry(10, 3, 16, 100);
+        var material = new THREE.MeshBasicMaterial({color: 0xe9686d});
+        var torus = new THREE.Mesh(geometry, material);
+        torus.position.set(20, 0, 1);
+        group.add(torus);
+
+        //inside circle
+        var geometry1 = new THREE.TorusGeometry(1, 1, 16, 100);
+        var material1 = new THREE.MeshBasicMaterial({color: 0xe9686d});
+        var torus1 = new THREE.Mesh(geometry1, material1);
+        torus1.position.set(20, 0, 1);
+        group.add(torus1);
+
+        //charkh2
+        var geometry2 = new THREE.TorusGeometry(9, 3, 16, 100);
+        var material2 = new THREE.MeshBasicMaterial({color: 0xe9686d});
+        var torus3 = new THREE.Mesh(geometry2, material2);
+        torus3.position.set(60, 0, 1);
+        group.add(torus3);
+
+        var geometry3 = new THREE.TorusGeometry(1, 1, 16, 100);
+        var material3 = new THREE.MeshBasicMaterial({color: 0xe9686d});
+        var torus4 = new THREE.Mesh(geometry3, material3);
+        torus4.position.set(60, 0, 1);
+        group.add(torus4);
+
+        //mile-etesal1
+        var geometry4 = new THREE.CylinderGeometry(1, 1, 20, 64, 27);
+        var material4 = new THREE.MeshBasicMaterial({color: 0xff5079});
+        var cylinder = new THREE.Mesh(geometry4, material4);
+        cylinder.position.set(40, 1, 1);
+        cylinder.rotateZ(Math.PI / 2);
+        group.add(cylinder);
+
+        var geometry5 = new THREE.CylinderGeometry(1, 1, 10, 64, 27);
+        var material5 = new THREE.MeshBasicMaterial({color: 0xfbff2d});
+        var cylinder1 = new THREE.Mesh(geometry5, material5);
+        cylinder1.position.set(43, 1, 1);
+        cylinder1.rotateX(Math.PI / 2);
+        group.add(cylinder1);
+
+        //mile-etesal2
+        var geometry6 = new THREE.CylinderGeometry(1, 1, 20, 64, 27);
+        var material6 = new THREE.MeshBasicMaterial({color: 0xfbff2d});
+        var cylinder2 = new THREE.Mesh(geometry6, material6);
+        cylinder2.position.set(40, 7, 1);
+        cylinder2.rotateZ(Math.PI / 2);
+        group.add(cylinder2);
+
+        //paye-daste
+        var geometry7 = new THREE.CylinderGeometry(1, 1, 20, 64, 27);
+        var material7 = new THREE.MeshBasicMaterial({color: 0xff5079});
+        var cylinder3 = new THREE.Mesh(geometry7, material7);
+        cylinder3.position.set(50, 12, 1);
+        group.add(cylinder3);
+
+        //daste
+        var geometry8 = new THREE.CylinderGeometry(1, 1, 20, 64, 27);
+        var material8 = new THREE.MeshBasicMaterial({color: 0xfbff2d});
+        var cylinder4 = new THREE.Mesh(geometry8, material8);
+        cylinder4.position.set(50, 20, 1);
+        cylinder4.rotateX(Math.PI / 2);
+        group.add(cylinder4);
+
+        var geometry9 = new THREE.CylinderGeometry(1, 1, 7, 64, 27);
+        var material9 = new THREE.MeshBasicMaterial({color: 0xff5079});
+        var cylinder5 = new THREE.Mesh(geometry9, material9);
+        cylinder5.position.set(35, 10, 1);
+        group.add(cylinder5);
+
+        var geometry10 = new THREE.ConeGeometry(7, 5, 32);
+        var material10 = new THREE.MeshBasicMaterial({color: 0xe9686d});
+        var cone = new THREE.Mesh(geometry10, material10);
+        cone.position.set(35, 15, 1);
+        cone.rotateX(Math.PI);
+        group.add(cone);
+
+        group.position.set(-100, -5, 10);
+
+
+        var target = {x: 50, y: -5, z: -50};
+        var tween = new TWEEN.Tween(group.position).to(target, 7000);
+        tween.delay(500);
+        tween.easing(TWEEN.Easing.Back.Out);
+        tween.start();
+
+
+    }
+
+    function animate() {
+
+        var t = (Date.now() / 1000);
+
+        TWEEN.update();
+
+        // render the scene
+        renderer.render(scene, camera);
+
+        requestAnimationFrame(animate);
+    }
+
+</script>
+</body>
+</html>

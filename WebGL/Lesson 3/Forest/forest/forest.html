@@ -1,0 +1,587 @@
+<html>
+
+<head>
+  <title>Learning WebGL &mdash; lesson 2</title>
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+  <script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+
+  <script id="shader-fs" type="x-shader/x-fragment">
+    #ifdef GL_ES
+    precision highp float;
+    #endif
+
+    varying vec4 vColor;
+
+    void main(void) {
+        gl_FragColor = vColor;
+    }
+</script>
+
+  <script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+    attribute vec4 aVertexColor;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    varying vec4 vColor;
+
+    void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        vColor = aVertexColor;
+    }
+</script>
+
+
+  <script type="text/javascript">
+
+      var gl;
+
+      function initGL(canvas) {
+          try {
+              gl = canvas.getContext("experimental-webgl");
+              gl.viewportWidth = canvas.width;
+              gl.viewportHeight = canvas.height;
+          } catch (e) {
+          }
+          if (!gl) {
+              alert("Could not initialise WebGL, sorry :-(");
+          }
+      }
+
+
+      function getShader(gl, id) {
+          var shaderScript = document.getElementById(id);
+          if (!shaderScript) {
+              return null;
+          }
+
+          var str = "";
+          var k = shaderScript.firstChild;
+          while (k) {
+              if (k.nodeType == 3) {
+                  str += k.textContent;
+              }
+              k = k.nextSibling;
+          }
+
+          var shader;
+          if (shaderScript.type == "x-shader/x-fragment") {
+              shader = gl.createShader(gl.FRAGMENT_SHADER);
+          } else if (shaderScript.type == "x-shader/x-vertex") {
+              shader = gl.createShader(gl.VERTEX_SHADER);
+          } else {
+              return null;
+          }
+
+          gl.shaderSource(shader, str);
+          gl.compileShader(shader);
+
+          if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+              alert(gl.getShaderInfoLog(shader));
+              return null;
+          }
+
+          return shader;
+      }
+
+
+      var shaderProgram;
+
+      function initShaders() {
+          var fragmentShader = getShader(gl, "shader-fs");
+          var vertexShader = getShader(gl, "shader-vs");
+
+          shaderProgram = gl.createProgram();
+          gl.attachShader(shaderProgram, vertexShader);
+          gl.attachShader(shaderProgram, fragmentShader);
+          gl.linkProgram(shaderProgram);
+
+          if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+              alert("Could not initialise shaders");
+          }
+
+          gl.useProgram(shaderProgram);
+
+          shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+          gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+          shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+          gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+
+          shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+          shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+      }
+
+
+      var mvMatrix = mat4.create();
+      var pMatrix = mat4.create();
+
+      function setMatrixUniforms() {
+          gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+          gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+      }
+
+      var triangleVertexPositionBuffer;
+      var triangleVertexColorBuffer;
+      var squareVertexPositionBuffer;
+      var squareVertexColorBuffer;
+
+      function initBuffers() {
+
+
+
+          triangleVertexPositionBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
+          var vertices = [
+              //TREE
+              //tree_leaf_one
+              -2.0,  2.8,  0.0,
+              -3.5, 1.0,  0.0,
+              -0.5, 1.0,  0.0,
+              //tree_leaf_two
+              -2.0,  2.8,  0.0,
+              -4.0, 0.0, 0.0,
+              0.0, 0.0, 0.0,
+              //tree_leaf_three
+              -2.0,  2.8,  0.0,
+              -4.5, -1.0, 0.0,
+              0.5, -1.0, 0.0,
+              //tree_trunk_left
+               -2.5, -1.0, 0.0,
+               -2.5, -2.0, 0.0,
+               -1.5, -2.0, 0.0,
+              //tree_trunk_right
+              -1.5, -2.0, 0.0,
+              -1.5, -1.0, 0.0,
+              -2.5, -1.0, 0.0,
+              //BIRD
+              //bird_one_body
+              1.0, 2.0, -15.0,
+              0.5, 0.5, -15.0,
+              2.5, 0.0, -15.0,
+              //bird_one_neck
+              0.9, 1.7, -15.0,
+              0.6, 0.8, -15.0,
+              0.0, 1.85, -15.0,
+              //bird_one_tip
+              -0.3, 1.5, -15.0,
+              -0.5, 1.3, -15.0,
+              -0.3, 1.29, -15.0,
+              //bird_one_head
+              0.0, 1.85, -15.0,
+              -0.5, 1.3, -15.0,
+              0.5, 1.2, -15.0,
+              //bird_one_big_wing
+              2.0, 3.3, -15.0,
+              0.7, 1.6, -15.0,
+              2.2, 0.2, -15.0,
+              //bird_one_small_wing
+              3.6, 2.3, -15.0,
+              0.7, 1.6, -15.0,
+              2.0, 0.2, -15.0,
+              //bird_one_tail
+              3.3, -0.05, -15.0,
+              2.2, -0.6, -15.0,
+              2.2, 0.2, -15.0,
+
+              //bird_two_body
+              5.0, 1.0, -16.5,
+              4.5, -0.5, -16.5,
+              6.5, -1.0, -16.5,
+              //bird_two_neck
+              4.9, 0.7, -16.5,
+              4.6, -0.2, -16.5,
+              4.0, 0.85, -16.5,
+              //bird_two_tip
+              3.7, 0.5, -16.5,
+              3.5, 0.3, -16.5,
+              3.7, 0.29, -16.5,
+              //bird_teo_head
+              4.0, 0.85, -16.5,
+              3.5, 0.3, -16.5,
+              4.5, 0.2, -16.5,
+              //bird_two_big_wing
+              6.0, 2.3, -16.5,
+              4.7, 0.6, -16.5,
+              6.2, -0.8, -16.5,
+              //bird_two_small_wing
+              7.6, 1.3, -16.5,
+              4.7, 0.6, -16.5,
+              6.0, -0.8, -16.5,
+              //bird_two_tail
+              7.3, -1.05, -16.5,
+              6.2, -1.6, -16.5,
+              6.2, -0.8, -16.5,
+
+              //bird_three_body
+              3.0, 5.0, -18.0,
+              2.5, 3.5, -18.0,
+              4.5, 3.0, -18.0,
+              //bird_three_neck
+              2.9, 4.7, -18.0,
+              2.6, 3.8, -18.0,
+              2.0, 4.85, -18.0,
+              //bird_three_tip
+              1.7, 4.5, -18.0,
+              1.5, 4.3, -18.0,
+              1.7, 4.29, -18.0,
+              //bird_three_head
+              2.0, 4.85, -18.0,
+              1.5, 4.3, -18.0,
+              2.5, 4.2, -18.0,
+              //bird_three_big_wing
+              4.0, 6.3, -18.0,
+              2.7, 4.6, -18.0,
+              4.2, 3.2, -18.0,
+              //bird_three_small_wing
+              5.6, 5.3, -18.0,
+              2.7, 4.6, -18.0,
+              4.0, 3.2, -18.0,
+              //bird_three_tail
+              5.3, 2.95, -18.0,
+              4.2, 2.4, -18.0,
+              4.2, 3.2, -18.0,
+              //CAT
+              //cat_body_parts
+              7.0, -1.0, -3.0,
+              8.0, -1.0, -3.0,
+              7.0, -2.0, -3.0,
+
+              7.0, -2.0, -3.0,
+              8.0, -2.0, -3.0,
+              8.0, -1.0, -3.0,
+
+              7.0, -2.0, -3.0,
+              7.0, -1.0, -3.0,
+              6.5, -1.5, -3.0,
+
+              8.0, -2.0, -3.0,
+              8.0, -1.0, -3.0,
+              8.5, -1.5, -3.0,
+              //cat_head_parts
+              5.0, -1.0, -3.0,
+              5.5, -1.5, -3.0,
+              5.5, -0.5, -3.0,
+
+              6.5, -0.5, -3.0,
+              7.0, -1.0, -3.0,
+              6.5, -1.5, -3.0,
+
+              5.5, -0.5, -3.0,
+              6.5, -0.5, -3.0,
+              5.5, -1.5, -3.0,
+
+              6.5, -0.5, -3.0,
+              6.5, -1.5, -3.0,
+              5.5, -1.5, -3.0,
+              //cat_right_leg
+              8.0, -2.0, -3.0,
+              8.4, -3.0, -3.0,
+              8.5, -1.5, -3.0,
+
+              9.5, -4.0, -3.0,
+              8.4, -3.0, -3.0,
+              8.5, -1.5, -3.0,
+              //cat_left_leg
+              6.5, -1.5, -3.0,
+              7.0, -2.0, -3.0,
+              6.5, -3.0, -3.0,
+
+              6.5, -1.5, -3.0,
+              5.8, -3.0, -3.0,
+              6.5, -3.0, -3.0,
+              //cat_right_ear
+              6.7, 0.0, -3.0,
+              6.5, -0.5, -3.0,
+              7.0, -1.0, -3.0,
+              //cat_left_ear
+              5.25, 0.0, -3.0,
+              5.0, -1.0, -3.0,
+              5.5, -0.5, -3.0,
+              //cat_tail
+              8.0, -1.0, -3.0,
+              8.5, -1.5, -3.0,
+              9.0, -1.0, -3.0,
+
+              8.5, -1.5, -3.0,
+              9.0, -1.0, -3.0,
+              9.5, -1.5, -3.0,
+
+
+
+
+          ];
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+          triangleVertexPositionBuffer.itemSize = 3;
+          triangleVertexPositionBuffer.numItems = 126;
+
+          triangleVertexColorBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexColorBuffer);
+          var colors = [
+              //TREE
+              //tree_leaf_one
+              0.14,  1.0,  0.02, 1.0,
+              0.7745098,  1.0,  0.0, 1.0,
+              0.7745098,  1.0,  0.0, 1.0,
+              //tree_leaf_two
+              0.14,  1.0,  0.02, 1.0,
+              0.7745098,  1.0,  0.0, 1.0,
+              0.7745098,  1.0,  0.0, 1.0,
+              ////tree_leaf_three
+              0.14,  1.0,  0.02, 1.0,
+              0.7745098,  1.0,  0.0, 1.0,
+              0.7745098,  1.0,  0.0, 1.0,
+              //tree_trunk_left
+              1.0, 0.386363636363, 0.011363636363, 1.0,
+              1.0, 0.386363636363, 0.011363636363, 1.0,
+              1.0, 0.386363636363, 0.011363636363, 1.0,
+              //tree_trunk_right
+              1.0, 0.386363636363, 0.011363636363, 1.0,
+              1.0, 0.386363636363, 0.011363636363, 1.0,
+              1.0, 0.386363636363, 0.011363636363, 1.0,
+
+              //BIRD
+              //bird_one_body
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_one_neck
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_one_tip
+              1.0, 0.406862, 0.009803, 1.0,
+              1.0, 0.406862, 0.009803, 1.0,
+              1.0, 0.406862, 0.009803, 1.0,
+              //bird_one_neck
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_one_big_wing
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_one_small_wing
+              1.0, 0.541832, 0.872509, 1.0,
+              1.0, 0.541832, 0.872509, 1.0,
+              1.0, 0.541832, 0.872509, 1.0,
+              //bird_one_tail
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+
+              //bird_two_body
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_two_neck
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_two_tip
+              1.0, 0.406862, 0.009803, 1.0,
+              1.0, 0.406862, 0.009803, 1.0,
+              1.0, 0.406862, 0.009803, 1.0,
+              //bird_two_neck
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_two_big_wing
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_two_small_wing
+              1.0, 0.541832, 0.872509, 1.0,
+              1.0, 0.541832, 0.872509, 1.0,
+              1.0, 0.541832, 0.872509, 1.0,
+              //bird_two_tail
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+
+              //bird_three_body
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_three_neck
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_three_tip
+              1.0, 0.406862, 0.009803, 1.0,
+              1.0, 0.406862, 0.009803, 1.0,
+              1.0, 0.406862, 0.009803, 1.0,
+              //bird_three_neck
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_three_big_wing
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //bird_three_small_wing
+              1.0, 0.541832, 0.872509, 1.0,
+              1.0, 0.541832, 0.872509, 1.0,
+              1.0, 0.541832, 0.872509, 1.0,
+              //bird_three_tail
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              1.0, 0.807843, 0.941176, 1.0,
+              //cat_body_parts
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              //cat_head_parts
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              //cat_right_leg
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              //cat_left_leg
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              //cat_right_ear
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              //cat_left_ear
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              //cat_tail
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+              1.0, 0.70108695, 0.0054347, 1.0,
+
+
+          ];
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+          triangleVertexColorBuffer.itemSize = 4;
+          triangleVertexColorBuffer.numItems = 3;
+
+
+          squareVertexPositionBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+          vertices = [
+              5.0,  -2.0,  0.0,
+              -9.0,  -2.0,  0.0,
+              5.0, -5.0,  0.0,
+              -9.0, -5.0,  0.0
+          ];
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+          squareVertexPositionBuffer.itemSize = 3;
+          squareVertexPositionBuffer.numItems = 4;
+
+          squareVertexColorBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexColorBuffer);
+          colors = []
+          for (var i=0; i < 4; i++) {
+              colors = colors.concat([0.4343434343, 1.0, 0.0202020202, 1.0]);
+          }
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+          squareVertexColorBuffer.itemSize = 4;
+          squareVertexColorBuffer.numItems = 4;
+      }
+
+
+
+      function drawScene() {
+          gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+          mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+
+          mat4.identity(mvMatrix);
+
+          mat4.translate(mvMatrix, [-1.5, 0.0, -7.0]);
+          gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
+          gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+          gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexColorBuffer);
+          gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, triangleVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+          setMatrixUniforms();
+          gl.drawArrays(gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);
+
+          mat4.translate(mvMatrix, [3.0, 0.0, 0.0]);
+          gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+          gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+          gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexColorBuffer);
+          gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, squareVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+          setMatrixUniforms();
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
+      }
+
+
+
+      function webGLStart() {
+          var canvas = document.getElementById("lesson02-canvas");
+          initGL(canvas);
+          initShaders()
+          initBuffers();
+
+          gl.clearColor(0.7559055118, 1.0, 0.9330708661, 1.0);
+          gl.enable(gl.DEPTH_TEST);
+
+          drawScene();
+      }
+
+  </script>
+
+
+</head>
+
+
+<body onload="webGLStart();">
+<a href="http://learningwebgl.com/blog/?p=134">&lt;&lt; Back to Lesson 2</a><br />
+
+<canvas id="lesson02-canvas" style="border: none;" width="1700" height="800"></canvas>
+
+<br/>
+<a href="http://learningwebgl.com/blog/?p=134">&lt;&lt; Back to Lesson 2</a><br />
+</body>
+
+</html>

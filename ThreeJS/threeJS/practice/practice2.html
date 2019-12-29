@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camera</title>
+  <style>
+
+    body {
+    @include display(flex);
+    @include align-content(center);
+      color: #353535;
+      min-height: 100vh;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 4px;
+      text-align: center;
+      background-color: lightgreen;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .container {
+      background-color: white;
+      box-shadow: 0 0 4px 1px #BBB;
+      text-align: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    #web-gl {
+      height: 100%;
+      width: 100%;
+    }
+
+  </style>
+  <script type="text/javascript" src="lib/three.js"></script>
+  <script type="text/javascript" src="lib/OrbitControls.js"></script>
+  <script type="text/javascript" src="lib/dat.gui.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <div id="web-gl">
+  </div>
+</div>
+<script id="scriptScene0" type="text/javascript">
+
+    //  Height and Width Variables
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+
+    //  Basic Variables
+    var camera, renderer, cameraOrtho, activeCamera, scene;
+
+    //  Box Variables
+    var torus;
+    var toruses = [300];
+
+    //  Controls Variable
+    var controls;
+
+    var surfaceMesh;
+    init();
+    animate();
+    createPanel();
+
+    // once everything is loaded, we run our Three.js stuff.
+    function init() {
+
+        //  Create a scene, that will hold all our elements such as objects,
+        // cameras and lights.
+        scene = new THREE.Scene();
+
+        // create a camera, which defines where we're looking at.
+        camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+        cameraOrtho = new THREE.OrthographicCamera(width / -4, width / 4, height / 4, height / -4, 10, 1000);
+        camera.add(cameraOrtho);
+
+        //  Create a render and set the size
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setClearColor(new THREE.Color(0x000000));
+        renderer.setSize(width, height);
+
+        //  Setting the active camera
+        activeCamera = camera;
+
+        //  Mouse control
+        controls = new THREE.OrbitControls(activeCamera, renderer.domElement);
+        //controls.addEventListener('change', renderer);
+
+        //  Remove when using animation loop
+        //  Enable animation loop when using damping or authorisation
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.07;
+        controls.enableZoom = true;
+
+        //  Position and point the camera to the center of the scene
+        activeCamera.position.x = 100;
+        activeCamera.position.y = 80;
+        activeCamera.position.z = 200;
+        activeCamera.lookAt(scene.position);
+
+        //  Add the output of the renderer to the html element
+        document.getElementById("web-gl").appendChild(renderer.domElement);
+
+        //  Surface
+        var textureSurface = new THREE.TextureLoader().load('texture/floor.jpg');
+        var surface = new THREE.PlaneGeometry(1300, 1350);
+        var surfaceMaterial = new THREE.MeshPhongMaterial({
+            color: 0xcccccc,
+            side: THREE.DoubleSide,
+            map: textureSurface
+        });
+        surfaceMesh = new THREE.Mesh(surface, surfaceMaterial);
+        surfaceMesh.rotateX(Math.PI / 2);
+        surfaceMesh.position.y = -50;
+        surfaceMesh.position.z = -300;
+        scene.add(surfaceMesh.clone());
+
+        //  Add spotlight for the shadows
+        var spotLight = new THREE.SpotLight(0xffffaa);
+        spotLight.angle = 1;
+        spotLight.penumbra = 0.3;
+        spotLight.position.set(10, 280, 0);
+        scene.add(spotLight.clone());
+
+        //  Add subtle ambient lighting
+        var ambientColor = "#ffffff";
+        var ambientLight = new THREE.AmbientLight(ambientColor, .4);
+        scene.add(ambientLight.clone());
+
+
+        //  Create the  box wireFrame
+        var textureTorus = new THREE.TextureLoader().load('texture/weird.jpg');
+        var Torusgeometry = new THREE.TorusGeometry( 10, 3, 16, 100 );
+        var TorusboxMaterial = new THREE.MeshPhongMaterial({shininess: 100, map: textureTorus});
+        torus = new THREE.Mesh( Torusgeometry, TorusboxMaterial );
+        torus.position.x = -60;
+        torus.position.y = 20;
+
+        //  Clone box into toruses array
+        Toruses();
+
+        //  Randomly placed the toruses in scene
+        for (var j = 0; j < toruses.length; j++) {
+
+            toruses[j].position.x = Math.random() * 600 - 200;
+            toruses[j].position.y = Math.random() * 600 - 100;
+            toruses[j].position.z = Math.random() * 600 - 100;
+            scene.add(toruses[j]);
+        }
+    }
+
+    function animate() {
+
+
+
+        var t = (Date.now() / 1000);
+        for (var j = 0; j < toruses.length; j++) {
+
+            toruses[j].rotation.x = t * 2;
+            toruses[j].rotation.y = t / 2;
+            toruses[j].rotation.z = t;
+        }
+        for (var j = 0; j < toruses.length; j++) {
+
+
+            toruses[Math.floor(Math.random() * 300)].position.x += Math.sin(t) / 4;
+            toruses[Math.floor(Math.random() * 300)].position.y += Math.cos(t) / 4;
+        }
+
+
+        renderer.render(scene, activeCamera);
+        requestAnimationFrame(animate);
+
+        controls.update();
+    }
+
+    function createPanel() {
+
+        var gui = new dat.GUI({width: 300});
+        var cameraFolder = gui.addFolder('Camera');
+
+        props = {
+            'Perspective Camera': btn0,
+            'Orthographic Camera': btn1
+        };
+        cameraFolder.add(props, 'Perspective Camera');
+        cameraFolder.add(props, 'Orthographic Camera');
+        cameraFolder.open();
+    }
+
+    function btn0() {
+
+        activeCamera = camera;
+    }
+
+    function btn1() {
+
+        activeCamera = cameraOrtho;
+    }
+
+    function Toruses() {
+
+        for (var i = 0; i < 300; i++) {
+
+            toruses[i] = torus.clone();
+        }
+    }
+</script>
+</body>
+</html>
